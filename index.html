@@ -243,6 +243,9 @@
   .cal-legend i.dreaming  { background: var(--accent3); }
 
   /* ── trip cards ── */
+  .trip-card.past { opacity: 0.5; filter: grayscale(0.4); }
+  .trip-card.past .card-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.25); }
+  .trip-card.past .status-badge { background: #ddd !important; color: #888 !important; border-color: #ccc !important; }
   .cards-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(17em, 1fr)); gap: 1.1em;
   }
@@ -893,6 +896,10 @@
       </div>
     </div>
     <div class="window-body" id="cards-body">
+      <div class="view-tabs" style="margin-bottom:14px">
+        <button class="view-tab active" id="tab-upcoming" onclick="switchCardsTab('upcoming')">✈️ Upcoming</button>
+        <button class="view-tab" id="tab-past" onclick="switchCardsTab('past')">📦 Past</button>
+      </div>
       <div class="cards-grid" id="cards-grid">
         <div class="loading-state" style="grid-column:1/-1;">
           <div class="spinner"></div>
@@ -1131,19 +1138,29 @@ const SHEET_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQJtSqav
 const SUPABASE_URL   = "https://uqvkrbeuxhddqgrhztwo.supabase.co";
 const SUPABASE_KEY   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxdmtyYmV1eGhkZHFncmh6dHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODA5ODAsImV4cCI6MjA5NTE1Njk4MH0.yKbOuf-W96oEYeKniNzm9gxgSlenYh-rhglenOYSdkQ";
 
-// ── default trips shown until Google Sheets is connected ──
+// ── default trips — kept in sync with Google Sheet as fallback ──
 const DEFAULT_TRIPS = [
-  { name:"Waking Life Festival",       destination:"Crato, Portugal",          startDate:"2026-06-17", endDate:"2026-06-22", status:"confirmed", vibe:"Art Festival|Desert|Wild|Hippy|Music",              notes:"One of the best boutique festivals in Europe — dusty sunsets, sound systems in the hills, and pure festival magic 🔥", emoji:"🔥" },
-  { name:"Work from Lisbon",            destination:"Lisbon, Portugal",          startDate:"2026-06-22", endDate:"2026-06-25", status:"confirmed", vibe:"Digital Nomad|Decompression|Slow Mornings|City",     notes:"Post-festival decompression. Pastel de nata, good wifi, golden light ☀️", emoji:"💻" },
-  { name:"Stephayun & Rustam Time",     destination:"Prenzlauer Berg, Berlin",   startDate:"2026-06-25", endDate:"2026-07-03", status:"confirmed", vibe:"Holmies|Family Vibes|Home Away from Home|Berlin",   notes:"Real life, real love. The best kind of slow Berlin days with the best people 🏠", emoji:"🏠" },
-  { name:"Tina, Debbie & Xav Sleepover",destination:"Kreuzberg, Berlin",         startDate:"2026-07-03", endDate:"2026-07-13", status:"tentative", vibe:"Kitten Playtime|Uber Kool|Urban|Mischief|Cosy",     notes:"Pillow forts, corner cafés, canal walks, and the world's most chaotic but wholesome sleepover energy 🐱", emoji:"🐱" },
-  { name:"Caity — Half Holmie Reunion", destination:"Prenzlauer Berg, Berlin",   startDate:"2026-07-14", endDate:"2026-07-20", status:"confirmed", vibe:"Holmies|Reunion|Berlin Summer|Chaos & Love",        notes:"Caity joins the P-Berg crew. Half the holmies, twice the energy 🫶", emoji:"🫶" },
-  { name:"Hiking in the Alps",           destination:"The Alps",                  startDate:"2026-07-26", endDate:"2026-08-02", status:"confirmed", vibe:"Gorpcore|Alpine Beauty|Type 2 Fun|Nature|Hiking",   notes:"The kind of hard that feels incredible. Big mountains, sore legs, views that make it all worth it 🏔️", emoji:"🏔️" },
-  { name:"PangXie 🦀 Wedding",           destination:"Spain",                     startDate:"2026-09-14", endDate:"2026-09-17", status:"confirmed", vibe:"Wedding|Celebration|Serene|Heartwarming|Love",      notes:"The most beautiful reason to be in Spain. Tears, dancing, and the best couple 🦀✨", emoji:"🦀" },
-  { name:"Taiwan / Japan Wander",        destination:"Taiwan & Japan",            startDate:"2026-10-28", endDate:"2026-11-06", status:"tentative", vibe:"Foodie|Wander|Asia|Autumn|Cosy",                    notes:"Late autumn in Asia — warm bowls of noodles, neon lights, fallen leaves, and no fixed plan 🍜", emoji:"🍜" },
-  { name:"TianZhong Marathon",           destination:"Tianzhong, Taiwan",         startDate:"2026-11-07", endDate:"2026-11-07", status:"tentative", vibe:"Running|Rice Fields|Foodie|Snacks|Taiwan",          notes:"Run through rice paddies at sunrise, eat your weight in local snacks by noon 🌾", emoji:"🌾" },
-  { name:"Singaporean Cruise",           destination:"Singapore & Southeast Asia",startDate:"2027-01-28", endDate:"2027-02-03", status:"tentative", vibe:"Wholesome|Culinary|Family Energy|Ocean|Cruise",     notes:"Floating through Southeast Asia with good food and even better people 🚢", emoji:"🚢" },
-  { name:"Taiwan / Japan (Again ✦)",     destination:"Taiwan & Japan",            startDate:"2027-02-01", endDate:"2027-03-15", status:"tentative", vibe:"Return|Dreamy|Cherry Blossom|Slow Travel|Asia",     notes:"Back again because once is never enough. Cherry blossoms, hot springs, and all the things left unexplored 🌸", emoji:"🌸" }
+  { name:"Joyce's 30th - CantoMax in T.O.", destination:"Toronto, Canada",            startDate:"2026-06-06", endDate:"2026-06-06", status:"confirmed", vibe:"chinese|Bday Party|mahjong|disco|c-pop house",              notes:"Maxed-out Canto-pop house beats and neon mahjong vibes to celebrate Joyce's 30th in high-fidelity style.", emoji:"🪩" },
+  { name:"Satpal & Jyoty's Wedding",         destination:"Etobicoke, Canada",           startDate:"2026-06-05", endDate:"2026-06-07", status:"confirmed", vibe:"Wedding|Joyful|Multi-Day",                                  notes:"Witnessing Satpal and Jyoty union in a multi-day pun filled, radiant celebration.", emoji:"🤵" },
+  { name:"Waking Life Festival",             destination:"Crato, Portugal",             startDate:"2026-06-17", endDate:"2026-06-22", status:"confirmed", vibe:"Art Festival|Desert|Hippy",                                  notes:"Boutique art festival in Europe — dusty sunsets, sound systems in the hills and desert magic.", emoji:"🔥" },
+  { name:"Work from Lisbon",                 destination:"Colares, Portugal",           startDate:"2026-06-22", endDate:"2026-06-25", status:"confirmed", vibe:"Digital Nomad|Coastal Decompression|Slow Mornings",          notes:"Post-festival decompression, work from the misty coastal hills of Colares.", emoji:"🌊" },
+  { name:"Stephayun & Rustam Fam Jam",       destination:"Prenzlauer Berg, Berlin",     startDate:"2026-06-25", endDate:"2026-07-03", status:"confirmed", vibe:"Holmies|Family Vibes|Stroller Nirvana",                      notes:"Another day in paradise. The best kind of slow Berlin days with the best people.", emoji:"🏠" },
+  { name:"Tina Debbie & Xav Slumber Week",   destination:"Kreuzberg, Berlin",           startDate:"2026-07-03", endDate:"2026-07-13", status:"confirmed", vibe:"Kitten Playtime|Uber Kool|Mischief|Crosswords",              notes:"Slumber party but elevated. Cafes, natural wines, siamese kittens and sage advice.", emoji:"🐱" },
+  { name:"Caity — Half Holmie Reunion",      destination:"Prenzlauer Berg, Berlin",     startDate:"2026-07-14", endDate:"2026-07-20", status:"confirmed", vibe:"Holmies Reunion|Tea|Snacks",                                 notes:"Caity joins the P-Berg crew. Half the holmies, twice the energy.", emoji:"🫶" },
+  { name:"Hiking in the Alps",               destination:"The Alps",                    startDate:"2026-07-26", endDate:"2026-08-02", status:"confirmed", vibe:"Gorpcore|Alpine Beauty|Type 2 Fun|Nature|Hiking",            notes:"The kind of hard that feels incredible. Conquering mountains with friends and solo.", emoji:"🏔️" },
+  { name:"Toronto Summer",                   destination:"Toronto, Canada",             startDate:"2026-08-06", endDate:"2026-09-02", status:"confirmed", vibe:"Home|Routine|Biking|Bopping About|Picnics",                  notes:"Nice to be home, exploring Toronto at its sizzling best.", emoji:"🌆" },
+  { name:"Hot Air Balloon Bday for Jenn H.", destination:"Montreal, Canada",            startDate:"2026-08-14", endDate:"2026-08-14", status:"dreaming",  vibe:"snackies|birthday trip|hot air balloons",                    notes:"Traverse the sky for Jenn's 30th!", emoji:"🎈" },
+  { name:"Dublin Down in Ireland",           destination:"Dublin, Ireland",             startDate:"2026-09-02", endDate:"2026-09-05", status:"confirmed", vibe:"Guinness|cliffs",                                            notes:"Guinness, pub crawl and dramatic cliffs.", emoji:"☘️" },
+  { name:"Basque in Gourmet Cuisine",        destination:"San Sebastián, Spain",        startDate:"2026-09-05", endDate:"2026-09-13", status:"tentative", vibe:"Pinxtos|fine dining|stuffing myself|food|glutton",           notes:"Me, my stomach and my wallet versus the World's Fine Food Capital. Who will win?", emoji:"🦪" },
+  { name:"PangXie Wedding",                  destination:"Spain",                       startDate:"2026-09-14", endDate:"2026-09-17", status:"confirmed", vibe:"Wedding|Celebration|Serene|Heartwarming|Love",               notes:"The most beautiful reason to be in Spain. Tears, dancing and celebrating the sweetest couple.", emoji:"🦀" },
+  { name:"Taiwan & Japan Wander",            destination:"Taiwan & Japan",              startDate:"2026-10-28", endDate:"2026-11-06", status:"dreaming",  vibe:"Foodie|Wander|Asia|Autumn|Cosy",                             notes:"Late autumn in Asia — warm bowls of noodles, neon lights, fallen leaves and no fixed plan.", emoji:"🍜" },
+  { name:"TianZhong Marathon",               destination:"Tianzhong, Taiwan",           startDate:"2026-11-07", endDate:"2026-11-07", status:"dreaming",  vibe:"Running|Rice Fields|Foodie|Snacks|Taiwan",                   notes:"Run through rice paddies at sunrise, eat your weight in local snacks by noon.", emoji:"🌾" },
+  { name:"Kobe Marathon",                    destination:"Kobe, Japan",                 startDate:"2026-11-15", endDate:"2026-11-15", status:"confirmed", vibe:"Running|Ocean|Bridge of Harmony|Personal Best",              notes:"OMG I REGRET IT ALREADY.", emoji:"🏃" },
+  { name:"Singaporean Cruise",               destination:"Singapore & Southeast Asia",  startDate:"2027-01-28", endDate:"2027-02-03", status:"tentative", vibe:"Wholesome|Culinary|Family Energy|Ocean|Cruise",              notes:"Floating through Southeast Asia with good food with fam and great friends.", emoji:"🚢" },
+  { name:"Taiwan Family Reunion",            destination:"Taiwan & Japan",              startDate:"2027-02-01", endDate:"2027-03-15", status:"dreaming",  vibe:"Return|Dreamy|Cherry Blossom|Slow Travel|Asia",              notes:"Potentially family and friends reunion?", emoji:"🌸" },
+  { name:"Sweet Hokkaido Summer",            destination:"Hokkaido, Japan",             startDate:"2027-08-01", endDate:"2027-08-29", status:"dreaming",  vibe:"slow|fruits|ice cream|beautiful fields",                     notes:"Dreamy escape to Hokkaido, exploring the wild plains, sleepy seaside towns, alpine flower fields.", emoji:"🌻" },
+  { name:"40 Year Old Gurls Trip",           destination:"???",                         startDate:"2030-05-01", endDate:"2030-05-01", status:"dreaming",  vibe:"mystery trip|girls trip",                                    notes:"Drop it Gurl Trip.", emoji:"💅" },
+  { name:"40th Holmies Patagonia Hike",      destination:"Patagonia, Argentina",        startDate:"2029-03-04", endDate:"2029-03-11", status:"confirmed", vibe:"Hiking|fastest man alive",                                   notes:"The big hike for the Prince of P-Berg's 40th.", emoji:"🐈‍⬛" },
 ];
 
 // ── supabase notes ──
@@ -1409,7 +1426,8 @@ function parseCSV(text) {
     }
     values.push(current.trim());
     const obj = {};
-    headers.forEach((h, i) => obj[h] = (values[i] || '').replace(/^"|"$/g, ''));
+    headers.forEach((h, i) => { obj[h] = (values[i] || '').replace(/^"|"$/g, '').trim(); });
+    if (obj.status) obj.status = obj.status.toLowerCase();
     return obj;
   }).filter(r => r.name && r.name.trim() !== '');
 }
@@ -1507,18 +1525,46 @@ function changeMonth(delta) {
 }
 
 // ── trip cards ──
+let _cardsTab = 'upcoming';
+
+function switchCardsTab(tab) {
+  _cardsTab = tab;
+  document.getElementById('tab-upcoming').classList.toggle('active', tab === 'upcoming');
+  document.getElementById('tab-past').classList.toggle('active', tab === 'past');
+  renderCards(allTrips);
+}
+
+function isTripPast(t) {
+  const end = parseDate(t.endDate);
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  return end < todayMidnight;
+}
+
 function renderCards(trips) {
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
   const statusLabel = { confirmed:'✅ confirmed', tentative:'🤔 tentative', dreaming:'💭 dreaming' };
-  [...trips].sort((a,b) => parseDate(a.startDate) - parseDate(b.startDate)).forEach(t => {
+
+  const filtered = [...trips]
+    .sort((a,b) => parseDate(a.startDate) - parseDate(b.startDate))
+    .filter(t => _cardsTab === 'past' ? isTripPast(t) : !isTripPast(t));
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="loading-state" style="grid-column:1/-1;padding:40px 0">
+      <span style="font-family:'Nunito',sans-serif;color:var(--text-muted)">${_cardsTab === 'past' ? 'No past trips yet — adventures ahead! ✈️' : 'No upcoming trips — add some!'}</span>
+    </div>`;
+    return;
+  }
+
+  filtered.forEach(t => {
     const vibes = (t.vibe || '').split('|').filter(Boolean);
+    const past = isTripPast(t);
     const card = document.createElement('div');
-    card.className = `trip-card ${t.status}`;
+    card.className = `trip-card ${t.status}${past ? ' past' : ''}`;
     card.innerHTML = `
       <div class="card-header ${t.status}">
         <span class="card-emoji">${t.emoji || '✈️'}</span>
-        <span class="status-badge ${t.status}">${statusLabel[t.status] || t.status}</span>
+        <span class="status-badge ${t.status}">${past ? '✓ done' : (statusLabel[t.status] || t.status)}</span>
       </div>
       <div class="card-body">
         <div class="card-name">${t.name}</div>
@@ -1526,7 +1572,7 @@ function renderCards(trips) {
         <div class="card-dates">🗓 ${formatDateRange(t.startDate, t.endDate)}</div>
         <div class="card-vibes">${vibes.map(v => `<span class="vibe-tag">${v}</span>`).join('')}</div>
         <div class="card-notes">${t.notes || ''}</div>
-        ${t.name.toLowerCase().includes('marathon') || t.name.toLowerCase().includes('kobe') ? `
+        ${!past && (t.name.toLowerCase().includes('marathon') || t.name.toLowerCase().includes('kobe')) ? `
         <a href="https://debborepo.github.io/debbie-runs-kobe" target="_blank"
           style="display:inline-block;margin-top:8px;font-family:'Nunito',sans-serif;font-size:0.75em;font-weight:700;color:var(--accent-dark);text-decoration:none;border:2px solid var(--accent-light);padding:4px 10px;background:var(--accent-pale);box-shadow:2px 2px 0 var(--accent-light);">
           🏃 track my training →
