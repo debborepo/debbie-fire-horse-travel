@@ -1,0 +1,22 @@
+name: Keep Supabase Alive
+  on:
+    schedule:
+      - cron: '0 9 */5 * *'
+    workflow_dispatch:
+  jobs:
+    ping:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Ping Supabase notes table
+          env:
+            SUPABASE_URL: "https://uqvkrbeuxhddqgrhztwo.supabase.co"
+            SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
+  YmFzZSIsInJlZiI6InVxdmtyYmV1eGhkZHFncmh6dHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nz
+  k1ODA5ODAsImV4cCI6MjA5NTE1Njk4MH0.yKbOuf-W96oEYeKniNzm9gxgSlenYh-rhglenOYSdkQ"
+          run: |
+            curl -s -o /dev/null -w "%{http_code}" \
+              "${SUPABASE_URL}/rest/v1/notes?limit=1" \
+              -H "apikey: ${SUPABASE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_KEY}"
+  And the filename box:
+  .github/workflows/keep-supabase-alive.yml
